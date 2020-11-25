@@ -65,6 +65,11 @@ Set-Content `
 # start the service.
 Start-Service $serviceName
 
+# wait for nomad to be avaiable.
+while (!(Test-NetConnection localhost -Port 4646).TcpTestSucceeded) {
+    Start-Sleep -Seconds 3
+}
+
 # show information.
 Write-Title 'nomad version'
 nomad version
