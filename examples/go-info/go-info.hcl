@@ -3,20 +3,30 @@
 job "go-info" {
   datacenters = ["dc1"]
   group "go-info" {
-    count = 2
+    count = @@group_count@@
     constraint {
       distinct_hosts = true
-    }
-    network {
-      port "http" {
-        to = 8000
-      }
     }
     task "go-info" {
       driver = "docker"
       config {
         image = "go-info:1.0.0"
-        ports = ["http"]
+        port_map {
+          http = 8000
+        }
+      }
+      resources {
+        network {
+          port "http" {}
+        }
+      }
+      service {
+        name = "go-info"
+        port = "http"
+        tags = ["http"]
+        meta {
+          version = "1.0.0"
+        }
       }
     }
   }

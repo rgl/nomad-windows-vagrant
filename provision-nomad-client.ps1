@@ -6,6 +6,12 @@ param(
 Import-Module Carbon
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1"
 
+$networkInterface = (
+        Get-NetAdapter -Physical `
+            | Get-NetIPAddress -AddressFamily IPv4 `
+            | Where-Object {$_.IPAddress -eq $ipAddress}
+    ).InterfaceAlias
+
 $serviceHome = 'C:\nomad-client'
 $serviceName = 'nomad-client'
 
@@ -22,7 +28,7 @@ if ($archiveHash -ne $archiveActualHash) {
 }
 Write-Host 'Installing nomad-client...'
 mkdir -Force "$serviceHome\bin" | Out-Null
-Get-ChocolateyUnzip -FileFullPath $archivePath -Destination $serviceHome\bin
+Get-ChocolateyUnzip -FileFullPath $archivePath -Destination "$serviceHome\bin"
 Remove-Item $archivePath
 
 # add to the Machine PATH.
@@ -30,7 +36,7 @@ Remove-Item $archivePath
     'PATH',
     "$([Environment]::GetEnvironmentVariable('PATH', 'Machine'));$serviceHome\bin",
     'Machine')
-# add docker to the current process PATH.
+# add to the current process PATH.
 $env:PATH += ";$serviceHome\bin"
 
 # install the service.
@@ -59,8 +65,27 @@ Set-Content `
             -replace '@@data_dir@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\data") `
             -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\nomad-client.log") `
             -replace '@@ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$ipAddress") `
+            -replace '@@network_interface@@',(ConvertTo-Json -Depth 100 -Compress "$networkInterface") `
             -replace '@@servers@@',(ConvertTo-Json -Depth 100 -Compress @($servers))
     )
+
+# configure the firewall.
+@(
+    ,@('http', 4646, 'tcp')
+) | ForEach-Object {
+    if ($_[2] -eq'tcp') {
+        New-NetFirewallRule `
+            -Name "nomad-client-in-tcp-$($_[0])" `
+            -DisplayName "Nomad Client $($_[0]) (TCP-In)" `
+            -Direction Inbound `
+            -Enabled True `
+            -Protocol TCP `
+            -LocalPort $_[1] `
+            | Out-Null
+    } else {
+        throw "unknown protocol $($_[2])"
+    }
+}
 
 # start the service.
 Start-Service $serviceName
@@ -73,3 +98,9 @@ while (!(Test-NetConnection localhost -Port 4646).TcpTestSucceeded) {
 # show information.
 Write-Title 'nomad version'
 nomad version
+Write-Title 'nomad agent-info'
+nomad agent-info
+Write-Title 'nomad server members'
+nomad server members
+Write-Title 'nomad node status'
+nomad node status

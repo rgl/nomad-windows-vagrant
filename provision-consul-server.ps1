@@ -7,28 +7,22 @@ param(
 Import-Module Carbon
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1"
 
-$networkInterface = (
-        Get-NetAdapter -Physical `
-            | Get-NetIPAddress -AddressFamily IPv4 `
-            | Where-Object {$_.IPAddress -eq $ipAddress}
-    ).InterfaceAlias
-
-$serviceHome = 'C:\nomad-server'
-$serviceName = 'nomad-server'
+$serviceHome = 'C:\consul-server'
+$serviceName = 'consul-server'
 $serviceUsername = "NT SERVICE\$serviceName"
 
-# install nomad-server.
-$archiveUrl = 'https://releases.hashicorp.com/nomad/1.0.0-beta3/nomad_1.0.0-beta3_windows_amd64.zip'
-$archiveHash = '79173fbf48c91d3cc1f8519f4daa605ea0453c5282faddf01b69da1bcdabf4ee'
+# install consul-server.
+$archiveUrl = 'https://releases.hashicorp.com/consul/1.9.0/consul_1.9.0_windows_amd64.zip'
+$archiveHash = '1cd7736b799a8c2ab1efd57020037a40f51061bac3bee07a518c8a4c87eb965d'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
-Write-Host 'Downloading nomad-server...'
+Write-Host 'Downloading consul-server...'
 (New-Object Net.WebClient).DownloadFile($archiveUrl, $archivePath)
 $archiveActualHash = (Get-FileHash $archivePath -Algorithm SHA256).Hash
 if ($archiveHash -ne $archiveActualHash) {
     throw "$archiveName downloaded from $archiveUrl to $archivePath has $archiveActualHash hash witch does not match the expected $archiveHash"
 }
-Write-Host 'Installing nomad-server...'
+Write-Host 'Installing consul-server...'
 mkdir -Force "$serviceHome\bin" | Out-Null
 Get-ChocolateyUnzip -FileFullPath $archivePath -Destination "$serviceHome\bin"
 Remove-Item $archivePath
@@ -42,8 +36,8 @@ Remove-Item $archivePath
 $env:PATH += ";$serviceHome\bin"
 
 # install the service.
-# see https://www.nomadproject.io/docs/install/windows-service
-$result = sc.exe create $serviceName binPath="$serviceHome\bin\nomad.exe agent -config=$serviceHome\config" start= auto
+# see https://learn.hashicorp.com/tutorials/consul/windows-agent
+$result = sc.exe create $serviceName binPath="$serviceHome\bin\consul.exe agent -config-dir=$serviceHome\config" start= auto
 if ($result -ne '[SC] CreateService SUCCESS') {
     throw "sc.exe create failed with $result"
 }
@@ -75,28 +69,31 @@ Grant-Permission $serviceHome $serviceUsername ReadAndExecute
 mkdir -Force "$serviceHome\config" | Out-Null
 Set-Content `
     -Encoding Ascii `
-    "$serviceHome\config\nomad-server.hcl" `
+    "$serviceHome\config\consul-server.hcl" `
     (
-        (Get-Content nomad-server.hcl) `
+        (Get-Content consul-server.hcl) `
             -replace '@@data_dir@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\data") `
             -replace '@@bootstrap_expect@@',"$bootstrapExpect" `
-            -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\nomad-server.log") `
+            -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\consul-server.log") `
             -replace '@@ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$ipAddress") `
-            -replace '@@network_interface@@',(ConvertTo-Json -Depth 100 -Compress "$networkInterface") `
             -replace '@@server1_ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$server1IpAddress")
     )
 
 # configure the firewall.
 @(
-    ,@('http', 4646, 'tcp')
-    ,@('rpc', 4647, 'tcp')
-    ,@('serf', 4648, 'tcp')
-    ,@('serf', 4648, 'udp')
+    ,@('server', 8300, 'tcp')
+    ,@('serf_lan', 8301, 'tcp')
+    ,@('serf_lan', 8301, 'udp')
+    ,@('serf_wan', 8302, 'tcp')
+    ,@('serf_wan', 8302, 'udp')
+    ,@('http', 8500, 'tcp')
+    ,@('dns', 8600, 'tcp')
+    ,@('dns', 8600, 'udp')
 ) | ForEach-Object {
     if ($_[2] -eq 'tcp') {
         New-NetFirewallRule `
-            -Name "nomad-server-in-tcp-$($_[0])" `
-            -DisplayName "Nomad Server $($_[0]) (TCP-In)" `
+            -Name "consul-server-in-tcp-$($_[0])" `
+            -DisplayName "Consul Server $($_[0]) (TCP-In)" `
             -Direction Inbound `
             -Enabled True `
             -Protocol TCP `
@@ -104,8 +101,8 @@ Set-Content `
             | Out-Null
     } elseif ($_[2] -eq 'udp') {
         New-NetFirewallRule `
-            -Name "nomad-server-in-udp-$($_[0])" `
-            -DisplayName "Nomad Server $($_[0]) (UDP-In)" `
+            -Name "consul-server-in-udp-$($_[0])" `
+            -DisplayName "Consul Server $($_[0]) (UDP-In)" `
             -Direction Inbound `
             -Enabled True `
             -Protocol UDP `
@@ -120,7 +117,9 @@ Set-Content `
 Start-Service $serviceName
 
 # show information.
-Write-Title 'nomad version'
-nomad version
-Write-Title 'nomad agent-info'
-nomad agent-info
+Write-Title 'consul version'
+consul --version
+Write-Title 'consul info'
+consul info
+Write-Title 'consul members'
+consul members

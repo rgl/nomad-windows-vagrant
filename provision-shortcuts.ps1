@@ -50,6 +50,11 @@ del -Force C:\Users\*\Desktop\*.ini
 URL=http://localhost:4646
 "@)
 
+
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Consul Web UI.url", @"
+[InternetShortcut]
+URL=http://localhost:8500
+"@)
 # restart explorer to apply the changed settings.
 (Get-Process explorer).Kill()
 '@)

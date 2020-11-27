@@ -1,10 +1,14 @@
 # see https://www.nomadproject.io/docs/configuration
+# see https://www.nomadproject.io/docs/configuration/consul
 # see https://learn.hashicorp.com/tutorials/nomad/production-reference-architecture-vm-with-consul
 # see https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
 # see https://www.nomadproject.io/docs/internals/security#network-ports
 
 datacenter = "dc1"
+
 data_dir = @@data_dir@@
+
+log_level = "DEBUG"
 log_file = @@log_file@@
 log_rotate_bytes = 52428800 # 50MiB
 log_rotate_max_files = 10
@@ -42,6 +46,11 @@ server {
 client {
   enabled = false
   network_speed = 1000
+  network_interface = @@network_interface@@
+}
+
+consul {
+  address = "127.0.0.1:8500"
 }
 
 plugin "raw_exec" {
