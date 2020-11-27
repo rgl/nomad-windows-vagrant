@@ -39,6 +39,7 @@ Vagrant.configure(2) do |config|
       config.vm.provision "shell", path: "ps.ps1", args: "provision-docker-ce.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: ["provision-consul-server.ps1", ip_address, first_server_node_ip, number_of_server_nodes]
       config.vm.provision "shell", path: "ps.ps1", args: ["provision-nomad-server.ps1", ip_address, first_server_node_ip, number_of_server_nodes]
+      config.vm.provision "shell", path: "ps.ps1", args: ["provision-prometheus.ps1", number_of_server_nodes, number_of_client_nodes] if n == 1
       config.vm.provision "shell", path: "ps.ps1", args: "provision-shortcuts.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision-consul-server-summary.ps1" if n == number_of_server_nodes
       config.vm.provision "shell", path: "ps.ps1", args: "provision-nomad-server-summary.ps1" if n == number_of_server_nodes

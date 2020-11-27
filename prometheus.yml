@@ -1,0 +1,32 @@
+# see https://prometheus.io/docs/operating/configuration/
+# see https://www.nomadproject.io/docs/operations/metrics
+# see https://learn.hashicorp.com/tutorials/nomad/prometheus-metrics
+
+global:
+  scrape_interval: 15s    # Default is 1m. This is also used in Nomad telemetry.collection_interval.
+  scrape_timeout: 10s     # Default is 10s.
+  evaluation_interval: 1m # Default is 1m.
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+        - localhost:9090
+  - job_name: consul
+    scheme: http
+    metrics_path: /v1/agent/metrics
+    params:
+      format:
+        - prometheus
+    static_configs:
+      - targets:
+        @@consul_targets@@
+  - job_name: nomad
+    scheme: http
+    metrics_path: /v1/metrics
+    params:
+      format:
+        - prometheus
+    static_configs:
+      - targets:
+        @@nomad_targets@@

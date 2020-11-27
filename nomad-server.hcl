@@ -1,5 +1,6 @@
 # see https://www.nomadproject.io/docs/configuration
 # see https://www.nomadproject.io/docs/configuration/consul
+# see https://www.nomadproject.io/docs/operations/metrics
 # see https://learn.hashicorp.com/tutorials/nomad/production-reference-architecture-vm-with-consul
 # see https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
 # see https://www.nomadproject.io/docs/internals/security#network-ports
@@ -60,6 +61,9 @@ plugin "raw_exec" {
 }
 
 telemetry {
+  collection_interval = "15s" # this is also used in Prometheus scrape_interval.
+  disable_hostname = true
+  prometheus_metrics = true
   publish_allocation_metrics = true
   publish_node_metrics = true
 }

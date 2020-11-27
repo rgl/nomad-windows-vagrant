@@ -50,11 +50,26 @@ del -Force C:\Users\*\Desktop\*.ini
 URL=http://localhost:4646
 "@)
 
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Nomad Metrics.url", @"
+[InternetShortcut]
+URL=http://localhost:4646/v1/metrics?format=prometheus
+"@)
 
 [IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Consul Web UI.url", @"
 [InternetShortcut]
 URL=http://localhost:8500
 "@)
+
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Consul Metrics.url", @"
+[InternetShortcut]
+URL=http://localhost:8500/v1/agent/metrics?format=prometheus
+"@)
+
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Prometheus.url", @"
+[InternetShortcut]
+URL=http://server1:9090
+"@)
+
 # restart explorer to apply the changed settings.
 (Get-Process explorer).Kill()
 '@)

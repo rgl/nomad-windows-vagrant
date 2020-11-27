@@ -37,3 +37,8 @@ ports {
 ui_config {
   enabled = true
 }
+
+telemetry {
+  disable_hostname = true
+  prometheus_retention_time = "1m" # this should be at least 2 * Prometheus scrape_interval.
+}
