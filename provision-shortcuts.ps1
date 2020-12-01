@@ -70,6 +70,11 @@ URL=http://localhost:8500/v1/agent/metrics?format=prometheus
 URL=http://server1:9090
 "@)
 
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Grafana.url", @"
+[InternetShortcut]
+URL=http://server1:3000
+"@)
+
 # restart explorer to apply the changed settings.
 (Get-Process explorer).Kill()
 '@)
