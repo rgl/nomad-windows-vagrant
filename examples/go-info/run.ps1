@@ -23,7 +23,11 @@ if ($LASTEXITCODE) {
     throw "failed to launch job with exit code $LASTEXITCODE"
 }
 
-# get its address from consul dns.
+# get its address from consul http api.
+Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/go-info
+Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/go-info?tag=http
+
+# get its address from consul dns api.
 dig '@127.0.0.1' -p 8600 a go-info.service.consul
 dig '@127.0.0.1' -p 8600 srv go-info.service.consul
 dig '@127.0.0.1' -p 8600 srv http.go-info.service.consul # restrict the query to the services that have the `http` tag.
