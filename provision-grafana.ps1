@@ -117,6 +117,19 @@ New-GrafanaDataSource @{
     }
 } | ConvertTo-Json
 
+# create the dashboards.
+Get-ChildItem grafana-*-dashboard.json | ForEach-Object {
+    Write-Host "Creating the $_ dashboard..."
+    $dashboard = (Get-Content -Raw $_) `
+        -replace '\${DS_PROMETHEUS}','Prometheus' `
+        | ConvertFrom-Json
+    $dashboard.PSObject.Properties.Remove('__inputs')
+    $dashboard.PSObject.Properties.Remove('__requires')
+    New-GrafanaDashboard @{
+        dashboard = $dashboard
+    }    
+}
+
 # configure the firewall.
 @(
     ,@('http', 3000)
