@@ -16,8 +16,8 @@ $serviceHome = 'C:\nomad-client'
 $serviceName = 'nomad-client'
 
 # install nomad-client.
-$archiveUrl = 'https://releases.hashicorp.com/nomad/1.0.0-beta3/nomad_1.0.0-beta3_windows_amd64.zip'
-$archiveHash = '79173fbf48c91d3cc1f8519f4daa605ea0453c5282faddf01b69da1bcdabf4ee'
+$archiveUrl = 'https://releases.hashicorp.com/nomad/1.0.0/nomad_1.0.0_windows_amd64.zip'
+$archiveHash = '31d985ab298c0ba88b9ff259b9afb8f5cfcf538235e78fe07871f4accde679db'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading nomad-client...'
