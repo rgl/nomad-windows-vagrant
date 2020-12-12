@@ -15,6 +15,15 @@ client_node_ip_address  = IPAddr.new first_client_node_ip
 Vagrant.configure(2) do |config|
   config.vm.box = "windows-2019-amd64"
 
+  config.vm.provider "libvirt" do |lv, config|
+    lv.memory = 3*1024
+    lv.cpus = 2
+    lv.cpu_mode = "host-passthrough"
+    lv.nested = false
+    lv.keymap = "pt"
+    config.vm.synced_folder ".", "/vagrant", type: "smb", smb_username: ENV["USER"], smb_password: ENV["VAGRANT_SMB_PASSWORD"]
+  end
+
   config.vm.provider "virtualbox" do |vb|
     vb.linked_clone = true
     vb.cpus = 2
