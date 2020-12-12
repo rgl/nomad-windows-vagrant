@@ -65,6 +65,16 @@ URL=http://localhost:8500
 URL=http://localhost:8500/v1/agent/metrics?format=prometheus
 "@)
 
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Vault Web UI.url", @"
+[InternetShortcut]
+URL=http://server1:8200
+"@)
+
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Vault Metrics.url", @"
+[InternetShortcut]
+URL=http://server1:8200/v1/sys/metrics?format=prometheus
+"@)
+
 [IO.File]::WriteAllText("$env:USERPROFILE\Desktop\Prometheus.url", @"
 [InternetShortcut]
 URL=http://server1:9090

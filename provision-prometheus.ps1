@@ -82,6 +82,7 @@ function Get-Targets($placeholder, $port) {
 Set-Content -Encoding Ascii "$prometheusHome\prometheus.yml" (
     $config `
         -replace '(.+)@@consul_targets@@',$((Get-Targets '@@consul_targets@@' 8500) -join "`n") `
+        -replace '(.+)@@vault_targets@@',$((Get-Targets '@@vault_targets@@' 8200) -join "`n") `
         -replace '(.+)@@nomad_targets@@',$((Get-Targets '@@nomad_targets@@' 4646) -join "`n")
 )
 'data','logs' | ForEach-Object {

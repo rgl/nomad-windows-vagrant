@@ -21,6 +21,15 @@ scrape_configs:
     static_configs:
       - targets:
         @@consul_targets@@
+  - job_name: vault
+    scheme: http
+    metrics_path: /v1/sys/metrics
+    params:
+      format:
+        - prometheus
+    static_configs:
+      - targets:
+        @@vault_targets@@
   - job_name: nomad
     scheme: http
     metrics_path: /v1/metrics
