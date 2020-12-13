@@ -42,5 +42,6 @@ ui_config {
 
 telemetry {
   disable_hostname = true
+  disable_compat_1.9 = true
   prometheus_retention_time = "1m" # this should be at least 2 * Prometheus scrape_interval.
 }
