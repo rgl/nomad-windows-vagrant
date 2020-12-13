@@ -115,7 +115,7 @@ New-GrafanaDataSource @{
         timeInterval = Get-PrometheusSimpleSetting 'scrape_interval'
         queryTimeout = Get-PrometheusSimpleSetting 'scrape_timeout'
     }
-} | ConvertTo-Json
+} | ConvertTo-Json -Depth 100
 
 # create the dashboards.
 Get-ChildItem grafana-*-dashboard.json | ForEach-Object {

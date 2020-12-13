@@ -53,6 +53,13 @@ if ($result -ne '[SC] ChangeServiceConfig2 SUCCESS') {
     throw "sc.exe failure failed with $result"
 }
 
+# get the machine current dns servers. they will be used as the consul
+# dns recursors.
+$recursors = (
+        Get-NetAdapter -Physical `
+            | Get-DnsClientServerAddress -AddressFamily IPv4
+    ).ServerAddresses
+
 # create the configuration.
 Disable-AclInheritance $serviceHome
 Grant-Permission $serviceHome SYSTEM FullControl
@@ -74,7 +81,8 @@ Set-Content `
             -replace '@@data_dir@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\data") `
             -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\consul-client.log") `
             -replace '@@ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$ipAddress") `
-            -replace '@@servers@@',(ConvertTo-Json -Depth 100 -Compress @($servers))
+            -replace '@@servers@@',(ConvertTo-Json -Depth 100 -Compress @($servers)) `
+            -replace '@@recursors@@',(ConvertTo-Json -Depth 100 -Compress @($recursors))
     )
 
 # configure the firewall.
@@ -82,6 +90,8 @@ Set-Content `
     ,@('serf_lan', 8301, 'tcp')
     ,@('serf_lan', 8301, 'udp')
     ,@('http', 8500, 'tcp')
+    ,@('dns', 53, 'tcp')
+    ,@('dns', 53, 'udp')
 ) | ForEach-Object {
     if ($_[2] -eq 'tcp') {
         New-NetFirewallRule `
@@ -108,6 +118,21 @@ Set-Content `
 
 # start the service.
 Start-Service $serviceName
+
+# configure this machine dns client to use the local consul client
+# as its dns resolver.
+Get-NetAdapter -Physical `
+    | Set-DnsClientServerAddress -ServerAddresses '127.0.0.1'
+# dito for docker.
+# NB we have to use the server ip address because docker containers normally
+#    have their own network interface, which means 127/8 resolves locally,
+#    instead of going to the host.
+# NB unfortunately this means we have to allow incomming connections to the
+#    DNS port.
+$config = Get-Content "$env:ProgramData\docker\config\daemon.json" | ConvertFrom-Json
+$config | Add-Member -Force -MemberType NoteProperty -Name dns -Value @($ipAddress)
+Set-Content -Encoding ascii "$env:ProgramData\docker\config\daemon.json" ($config | ConvertTo-Json -Depth 100)
+Restart-Service docker
 
 # show information.
 Write-Title 'consul version'

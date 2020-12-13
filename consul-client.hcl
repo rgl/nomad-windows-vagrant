@@ -20,7 +20,8 @@ disable_update_check = true
 bind_addr = "0.0.0.0"
 client_addr = "0.0.0.0"
 advertise_addr = @@ip_address@@
-retry_join = [@@servers@@]
+retry_join = @@servers@@
+recursors = @@recursors@@
 
 # NB if you change these ports you also need to change them in the firewall
 #    settings, server (in the ports stanza and retry_join),
@@ -31,7 +32,7 @@ ports {
   serf_lan = 8301
   serf_wan = 8302
   http = 8500
-  dns = 8600
+  dns = 53
 }
 
 ui_config {

@@ -33,6 +33,6 @@ Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/consul-ad-hoc
 Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/consul-ad-hoc?tag=http
 
 # get its address from consul dns api.
-dig '@127.0.0.1' -p 8600 a consul-ad-hoc.service.consul
-dig '@127.0.0.1' -p 8600 srv consul-ad-hoc.service.consul
-dig '@127.0.0.1' -p 8600 srv http.consul-ad-hoc.service.consul # restrict the query to the services that have the `http` tag.
+dig '@127.0.0.1' -p 53 a consul-ad-hoc.service.consul
+dig '@127.0.0.1' -p 53 srv consul-ad-hoc.service.consul
+dig '@127.0.0.1' -p 53 srv http.consul-ad-hoc.service.consul # restrict the query to the services that have the `http` tag.

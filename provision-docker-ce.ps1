@@ -52,7 +52,7 @@ $config = @{
     )
 }
 mkdir -Force "$env:ProgramData\docker\config" | Out-Null
-Set-Content -Encoding ascii "$env:ProgramData\docker\config\daemon.json" ($config | ConvertTo-Json)
+Set-Content -Encoding ascii "$env:ProgramData\docker\config\daemon.json" ($config | ConvertTo-Json -Depth 100)
 
 Write-Host 'Starting docker...'
 Start-Service docker
