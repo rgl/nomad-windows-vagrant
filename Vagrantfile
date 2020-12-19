@@ -98,6 +98,7 @@ Vagrant.configure(2) do |config|
       config.vm.provision "shell", path: "ps.ps1", args: ["examples/consul-ad-hoc/run.ps1", ip_address]
       config.vm.provision "shell", path: "ps.ps1", args: "examples/graceful-stop/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "examples/damon/run.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "examples/postgresql/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: ["examples/go-info/run.ps1", n] if n <= 2
     end
   end

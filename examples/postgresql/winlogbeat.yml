@@ -1,0 +1,37 @@
+# see https://www.elastic.co/guide/en/beats/winlogbeat/current/configuration-winlogbeat-options.html
+# see https://www.postgresql.org/docs/13.1/static/event-log-registration.html
+# see the available log names with:
+#       Get-WinEvent -ListLog * | Sort-Object LogName | Format-Table LogName
+# see the providers that write to a specific log with:
+#       (Get-WinEvent -ListLog Application).ProviderNames | Sort-Object
+#       (Get-WinEvent -ListLog Security).ProviderNames | Sort-Object
+# see the available provider names with:
+#       Get-WinEvent -ListProvider * | Sort-Object Name | Format-Table Name
+# see the last 20 PostgreSQL log events with:
+#       Get-WinEvent -MaxEvents 20 -FilterHashtable @{ProviderName='PostgreSQL'} | Sort-Object RecordId | Format-Table RecordId,TimeCreated,LevelDisplayName,Message
+winlogbeat.event_logs:
+  - name: Application
+    ignore_older: 2h
+  - name: Security
+    level: critical, error, warning
+    ignore_older: 2h
+  - name: System
+    level: critical, error, warning
+    ignore_older: 2h
+
+processors:
+  - include_fields:
+      # see https://www.elastic.co/guide/en/beats/winlogbeat/current/exported-fields-ecs.html
+      # see https://www.elastic.co/guide/en/beats/winlogbeat/current/exported-fields-winlog.html
+      fields:
+        - log.level
+        - winlog.channel
+        - winlog.provider_name
+        - message
+
+output.console:
+  codec.format:
+    string: '%{[@timestamp]} %{[log.level]} %{[winlog.channel]} %{[winlog.provider_name]}: %{[message]}'
+
+output.file:
+  enabled: false
