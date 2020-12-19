@@ -114,7 +114,7 @@ table > tbody > tr:hover {
 		</tbody>
 	</table>
 	<table>
-		<caption>Vault Managed PostgreSQL User</caption>
+		<caption>PostgreSQL with Vault managed user</caption>
 		<tbody>
 			{{- range .VaultPostgreSQL}}
 			<tr>
@@ -430,6 +430,12 @@ func getVaultPostgreSQL() []nameValuePair {
 	dataSourceName := dataSourceNameURL.String()
 
 	result := []nameValuePair{}
+
+	result = append(result, nameValuePair{Name: "Vault Secret LeaseID", Value: creds.LeaseID})
+
+	leaseDuration := time.Duration(creds.LeaseDuration * int(time.Second))
+	leaseExpirationTime := time.Now().Add(leaseDuration)
+	result = append(result, nameValuePair{Name: "Vault Secret LeaseDuration", Value: fmt.Sprintf("%s (until %s)", leaseDuration.String(), leaseExpirationTime.Local().Format(time.RFC1123Z))})
 
 	version, err := sqlExecuteScalar(dataSourceName, "select version()")
 	if err != nil {
