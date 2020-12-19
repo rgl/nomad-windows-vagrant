@@ -92,6 +92,17 @@ table > tbody > tr:hover {
 			{{- end}}
 		</tbody>
 	</table>
+	<table>
+		<caption>Vault</caption>
+		<tbody>
+			{{- range .Vault}}
+			<tr>
+				<th>{{.Name}}</th>
+				<td>{{.Value}}</td>
+			</tr>
+			{{- end}}
+		</tbody>
+	</table>
 </body>
 </html>
 `))
@@ -113,13 +124,92 @@ type indexData struct {
 	Runtime          string
 	Environment      []nameValuePair
 	Secrets          []nameValuePair
+	Vault            []nameValuePair
 }
 
 type nameValuePairs []nameValuePair
 
-func (a nameValuePairs) Len() int           { return len(a) }
-func (a nameValuePairs) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a nameValuePairs) Less(i, j int) bool { return a[i].Name < a[j].Name }
+func (a nameValuePairs) Len() int      { return len(a) }
+func (a nameValuePairs) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a nameValuePairs) Less(i, j int) bool {
+	if a[i].Name < a[j].Name {
+		return true
+	}
+	if a[i].Name > a[j].Name {
+		return false
+	}
+	return a[i].Value < a[j].Value
+}
+
+func getVault() []nameValuePair {
+	if os.Getenv("VAULT_TOKEN") == "" {
+		return nil
+	}
+	client, err := vault.NewClient(nil)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to create client: %v", err)}}
+	}
+
+	sys := client.Sys()
+
+	result := []nameValuePair{}
+
+	health, err := sys.Health()
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Health", Value: fmt.Sprintf("Failed to get health status: %v", err)})
+	} else {
+		result = append(result,
+			nameValuePair{Name: "ClusterID", Value: health.ClusterID},
+			nameValuePair{Name: "ClusterName", Value: health.ClusterName},
+			nameValuePair{Name: "Sealed", Value: strconv.FormatBool(health.Sealed)},
+			nameValuePair{Name: "Version", Value: health.Version},
+		)
+	}
+
+	tokenInformation, err := client.Auth().Token().LookupSelf()
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Token LookupSelf", Value: fmt.Sprintf("Failed to lookup self token: %v", err)})
+	} else {
+		tokenMetadata, err := tokenInformation.TokenMetadata()
+		if err != nil {
+			result = append(result, nameValuePair{Name: "ERROR Token Metadata", Value: fmt.Sprintf("Failed to get token metadata: %v", err)})
+		} else {
+			metadata := make([]nameValuePair, 0)
+			for k, v := range tokenMetadata {
+				metadata = append(metadata,
+					nameValuePair{Name: "Token Metadata", Value: fmt.Sprintf("%s=%s", k, v)},
+				)
+			}
+			sort.Sort(nameValuePairs(metadata))
+			result = append(result, metadata...)
+		}
+		// NB tokenPolicies = TokenPolicies + IdentityPolicies
+		tokenPolicies, err := tokenInformation.TokenPolicies()
+		if err != nil {
+			result = append(result, nameValuePair{Name: "ERROR Token Policies", Value: fmt.Sprintf("Failed to get token policies: %v", err)})
+		} else {
+			result = append(result,
+				nameValuePair{Name: "Token Policies", Value: strings.Join(tokenPolicies, "\n")},
+			)
+		}
+		if err != nil {
+			result = append(result, nameValuePair{Name: "ERROR Token TokenPolicies", Value: fmt.Sprintf("Failed to get token token policies: %v", err)})
+		} else {
+			result = append(result,
+				nameValuePair{Name: "Token Token Policies", Value: strings.Join(tokenInformation.Auth.TokenPolicies, "\n")},
+			)
+		}
+		if err != nil {
+			result = append(result, nameValuePair{Name: "ERROR Token IdentityPolicies", Value: fmt.Sprintf("Failed to get token identity policies: %v", err)})
+		} else {
+			result = append(result,
+				nameValuePair{Name: "Token Identity Policies", Value: strings.Join(tokenInformation.Auth.IdentityPolicies, "\n")},
+			)
+		}
+	}
+
+	return result
+}
 
 func main() {
 	log.SetFlags(0)
@@ -152,10 +242,12 @@ func main() {
 		environment := make([]nameValuePair, 0)
 		for _, v := range os.Environ() {
 			parts := strings.SplitN(v, "=", 2)
-			name := parts[0]
+			name := strings.ToUpper(parts[0])
 			value := parts[1]
 			switch name {
 			case "PATH":
+				fallthrough
+			case "PATHEXT":
 				fallthrough
 			case "XDG_DATA_DIRS":
 				fallthrough
@@ -191,6 +283,7 @@ func main() {
 			Runtime:          runtime.Version(),
 			Environment:      environment,
 			Secrets:          secrets,
+			Vault:            getVault(),
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

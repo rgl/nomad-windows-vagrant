@@ -83,7 +83,9 @@ Set-Content `
             -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\nomad-server.log") `
             -replace '@@ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$ipAddress") `
             -replace '@@network_interface@@',(ConvertTo-Json -Depth 100 -Compress "$networkInterface") `
-            -replace '@@server1_ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$server1IpAddress")
+            -replace '@@server1_ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$server1IpAddress") `
+            -replace '@@vault_address@@',(ConvertTo-Json -Depth 100 -Compress "http://localhost:8200") `
+            -replace '@@vault_token@@',(ConvertTo-Json -Depth 100 -Compress (Get-Content -Raw c:\vagrant\shared\vault-root-token.txt).Trim())
     )
 
 # configure the firewall.

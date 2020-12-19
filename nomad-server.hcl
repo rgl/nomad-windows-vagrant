@@ -1,5 +1,6 @@
 # see https://www.nomadproject.io/docs/configuration
 # see https://www.nomadproject.io/docs/configuration/consul
+# see https://www.nomadproject.io/docs/configuration/vault
 # see https://www.nomadproject.io/docs/operations/metrics
 # see https://learn.hashicorp.com/tutorials/nomad/production-reference-architecture-vm-with-consul
 # see https://learn.hashicorp.com/tutorials/nomad/production-deployment-guide-vm-with-consul
@@ -52,6 +53,12 @@ client {
 
 consul {
   address = "127.0.0.1:8500"
+}
+
+vault {
+  enabled = true
+  address = @@vault_address@@
+  token = @@vault_token@@
 }
 
 plugin "raw_exec" {

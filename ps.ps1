@@ -108,6 +108,18 @@ function nomad {
     }
 }
 
+# wrap the vault command (to make sure this script aborts when it fails).
+# NB exit 2 is returned when the allocation could not be fulfilled immediately
+#    (vault will keep retrying it in background so we assume it went ok).
+function vault {
+    process {
+        $_ | vault.exe @Args | Out-String -Stream -Width ([int]::MaxValue)
+        if (@(0, 2) -notcontains $LASTEXITCODE) {
+            throw "$(@('vault')+$Args | ConvertTo-Json -Compress) failed with exit code $LASTEXITCODE"
+        }
+    }
+}
+
 cd c:/vagrant
 $script = Resolve-Path $script
 cd (Split-Path $script -Parent)

@@ -67,12 +67,21 @@ Vagrant.configure(2) do |config|
               system(
                 'vagrant',
                 'powershell',
+                '--elevated',
                 '--command',
                 'C:/vagrant/ps.ps1 provision-vault-server-auto-unseal.ps1',
-                '--elevated',
                 machine_name.to_s
               )
             end
+            machine.ui.info "Configuring the Vault Server..."
+            system(
+              'vagrant',
+              'powershell',
+              '--elevated',
+              '--command',
+              'C:/vagrant/ps.ps1 provision-vault-server-configuration.ps1',
+              name
+            )
           end
         end
       end
@@ -99,6 +108,8 @@ Vagrant.configure(2) do |config|
       config.vm.provision "shell", path: "ps.ps1", args: "examples/graceful-stop/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "examples/damon/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "examples/postgresql/run.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "provision-vault-client.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "provision-vault-server-configuration-go-info.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: ["examples/go-info/run.ps1", n] if n <= 2
     end
   end

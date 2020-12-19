@@ -66,7 +66,8 @@ Set-Content `
             -replace '@@log_file@@',(ConvertTo-Json -Depth 100 -Compress "$serviceHome\logs\nomad-client.log") `
             -replace '@@ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$ipAddress") `
             -replace '@@network_interface@@',(ConvertTo-Json -Depth 100 -Compress "$networkInterface") `
-            -replace '@@servers@@',(ConvertTo-Json -Depth 100 -Compress @($servers))
+            -replace '@@servers@@',(ConvertTo-Json -Depth 100 -Compress @($servers)) `
+            -replace '@@vault_address@@',(ConvertTo-Json -Depth 100 -Compress "http://active.vault.service.consul:8200")
     )
 
 # configure the firewall.

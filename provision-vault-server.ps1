@@ -154,6 +154,12 @@ if ($initializeVaultServer) {
     Copy-Item vault-operator-init-result.txt C:\vagrant\shared\vault-operator-init-result.txt
     Copy-Item .vault-token C:\vagrant\shared\vault-root-token.txt
     Pop-Location
+    # make sure we configure vault by removing old cookies from an old runs
+    # after forming the cluster and unsealing each vault instance.
+    # see provision-vault-server-configuration*.ps1 and Vagrantfile
+    if (Test-Path C:\vagrant\shared\vault-server-configured*.txt) {
+        Remove-Item C:\vagrant\shared\vault-server-configured*.txt
+    }
 }
 
 # show information.

@@ -1,7 +1,8 @@
 $serviceHome = 'C:\vault-server'
 $serviceName = 'vault-server'
+$autoUnsealPath = "$serviceHome\bin\auto-unseal.ps1"
 
-if (Test-Path "$serviceHome\bin\auto-unseal.ps1") {
+if (Test-Path $autoUnsealPath) {
     Exit 0
 }
 
@@ -19,7 +20,7 @@ Get-Content C:\vagrant\shared\vault-operator-init-result.txt `
         "$serviceHome\config\unseal-keys.txt"
 
 # configure the service to auto-unseal.
-Set-Content -Encoding Ascii -Path "$serviceHome\bin\auto-unseal.ps1" -Value @'
+Set-Content -Encoding Ascii -Path $autoUnsealPath -Value @'
 $env:VAULT_ADDR = "http://localhost:8200"
 $env:PATH = "$env:PATH;$PSScriptRoot"
 Get-Content "$PSScriptRoot\..\config\unseal-keys.txt" `
@@ -39,7 +40,7 @@ nssm set $serviceName AppRedirectHook 1
 nssm set $serviceName AppEvents `
     Start/Post `
     PowerShell.exe `
-    -File "$serviceHome\bin\auto-unseal.ps1"
+    -File $autoUnsealPath
 
 # auto-unseal.
-&"$serviceHome\bin\auto-unseal.ps1"
+&$autoUnsealPath
