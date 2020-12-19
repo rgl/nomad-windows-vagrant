@@ -23,6 +23,12 @@ if ($LASTEXITCODE) {
     throw "failed to launch job with exit code $LASTEXITCODE"
 }
 
+# wait for the job deployment to be successful.
+Write-Output 'Waiting for job deployment to be successful...'
+Wait-ForCondition {
+    (nomad job deployments -latest -json go-info | ConvertFrom-Json).Status -eq 'successful'
+}
+
 # get its address from consul http api.
 Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/go-info
 Invoke-RestMethod http://127.0.0.1:8500/v1/catalog/service/go-info?tag=http
