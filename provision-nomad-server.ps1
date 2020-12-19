@@ -73,6 +73,8 @@ Grant-Permission $serviceHome $serviceUsername ReadAndExecute
     Grant-Permission "$serviceHome\$_" $serviceUsername FullControl
 }
 mkdir -Force "$serviceHome\config" | Out-Null
+# TODO use a non-root token as described at https://www.nomadproject.io/docs/integrations/vault-integration#token-role-based-integration
+$vaultToken = (Get-Content -Raw c:\vagrant\shared\vault-root-token.txt).Trim()
 Set-Content `
     -Encoding Ascii `
     "$serviceHome\config\nomad-server.hcl" `
@@ -85,7 +87,7 @@ Set-Content `
             -replace '@@network_interface@@',(ConvertTo-Json -Depth 100 -Compress "$networkInterface") `
             -replace '@@server1_ip_address@@',(ConvertTo-Json -Depth 100 -Compress "$server1IpAddress") `
             -replace '@@vault_address@@',(ConvertTo-Json -Depth 100 -Compress "http://localhost:8200") `
-            -replace '@@vault_token@@',(ConvertTo-Json -Depth 100 -Compress (Get-Content -Raw c:\vagrant\shared\vault-root-token.txt).Trim())
+            -replace '@@vault_token@@',(ConvertTo-Json -Depth 100 -Compress $vaultToken)
     )
 
 # configure the firewall.
