@@ -18,8 +18,8 @@ $serviceName = 'nomad-server'
 $serviceUsername = "NT SERVICE\$serviceName"
 
 # install nomad-server.
-$archiveUrl = 'https://releases.hashicorp.com/nomad/1.0.0/nomad_1.0.0_windows_amd64.zip'
-$archiveHash = '31d985ab298c0ba88b9ff259b9afb8f5cfcf538235e78fe07871f4accde679db'
+$archiveUrl = 'https://releases.hashicorp.com/nomad/1.0.1/nomad_1.0.1_windows_amd64.zip'
+$archiveHash = 'aa2eb70b7e414ae065f0c03f2d146a249fbcbdc1dcb1e153a9dfc02f1617198c'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading nomad-server...'
