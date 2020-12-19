@@ -15,8 +15,8 @@ $serviceName = 'vault-server'
 $serviceUsername = "NT SERVICE\$serviceName"
 
 # install vault-server.
-$archiveUrl = 'https://releases.hashicorp.com/vault/1.6.0/vault_1.6.0_windows_amd64.zip'
-$archiveHash = 'f4df525126885663a622478de34a9e6970985e29875b86cbb5a72860b7ab1a3f'
+$archiveUrl = 'https://releases.hashicorp.com/vault/1.6.1/vault_1.6.1_windows_amd64.zip'
+$archiveHash = '4a9b0c803098e745f22bdd510205803ceb4c800fb9c89810c784b6a9e9abc4a4'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading vault-server...'
