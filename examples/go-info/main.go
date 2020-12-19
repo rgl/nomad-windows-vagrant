@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"html/template"
@@ -8,17 +9,26 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
+
+	"github.com/olekukonko/tablewriter"
+
+	vault "github.com/hashicorp/vault/api"
+	_ "github.com/lib/pq"
 )
 
 var indexTemplate = template.Must(template.New("Index").Parse(`<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8" />
 <title>go-info</title>
 <style>
 body {
@@ -33,7 +43,7 @@ table {
 	border: .0625rem solid #c4cdda;
 	border-radius: 0 0 .25rem .25rem;
 	border-spacing: 0;
-    margin-bottom: 1.25rem;
+	margin-bottom: 1.25rem;
 	padding: .75rem 1.25rem;
 	text-align: left;
 	white-space: pre;
@@ -103,6 +113,28 @@ table > tbody > tr:hover {
 			{{- end}}
 		</tbody>
 	</table>
+	<table>
+		<caption>Vault Managed PostgreSQL User</caption>
+		<tbody>
+			{{- range .VaultPostgreSQL}}
+			<tr>
+				<th>{{.Name}}</th>
+				<td>{{.Value}}</td>
+			</tr>
+			{{- end}}
+		</tbody>
+	</table>
+	<table>
+		<caption>PostgreSQL</caption>
+		<tbody>
+			{{- range .PostgreSQL}}
+			<tr>
+				<th>{{.Name}}</th>
+				<td>{{.Value}}</td>
+			</tr>
+			{{- end}}
+		</tbody>
+	</table>
 </body>
 </html>
 `))
@@ -125,6 +157,8 @@ type indexData struct {
 	Environment      []nameValuePair
 	Secrets          []nameValuePair
 	Vault            []nameValuePair
+	VaultPostgreSQL  []nameValuePair
+	PostgreSQL       []nameValuePair
 }
 
 type nameValuePairs []nameValuePair
@@ -211,6 +245,263 @@ func getVault() []nameValuePair {
 	return result
 }
 
+func sqlExecuteScalar(dataSourceName string, sqlStatement string) (string, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return "", fmt.Errorf("Open connection failed: %w", err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		return "", fmt.Errorf("Ping failed: %w", err)
+	}
+
+	var scalar string
+
+	err = db.QueryRow(sqlStatement).Scan(&scalar)
+	if err != nil {
+		return "", fmt.Errorf("Scan failed: %w", err)
+	}
+
+	return scalar, nil
+}
+
+func sqlGetUsers(dataSourceName string) (string, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return "", fmt.Errorf("Open connection failed: %w", err)
+	}
+	defer db.Close()
+
+	// see https://www.postgresql.org/docs/13/view-pg-user.html
+	var sqlStatement = `
+select usename, usecreatedb, usesuper, userepl, usebypassrls, valuntil
+from pg_catalog.pg_user
+order by usename desc
+`
+
+	rows, err := db.Query(sqlStatement)
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var tableBuilder strings.Builder
+	table := tablewriter.NewWriter(&tableBuilder)
+	table.SetHeader([]string{"Name", "Attributes", "Valid Until"})
+	for rows.Next() {
+		var username string
+		var usecreatedb bool
+		var usesuper bool
+		var userepl bool
+		var usebypassrls bool
+		var valuntil sql.NullTime
+		err := rows.Scan(&username, &usecreatedb, &usesuper, &userepl, &usebypassrls, &valuntil)
+		if err != nil {
+			return "", fmt.Errorf("Scan failed: %w", err)
+		}
+		attributes := make([]string, 0)
+		if usecreatedb {
+			attributes = append(attributes, "create db")
+		}
+		if usesuper {
+			attributes = append(attributes, "super user")
+		}
+		if userepl {
+			attributes = append(attributes, "streaming replication")
+		}
+		if usebypassrls {
+			attributes = append(attributes, "bypass row level security policy")
+		}
+		var expirationTime string
+		if valuntil.Valid {
+			expirationTime = valuntil.Time.Local().Format(time.RFC1123Z)
+		}
+		table.Append([]string{username, strings.Join(attributes, ", "), expirationTime})
+	}
+	table.Render()
+
+	err = rows.Err()
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+
+	return tableBuilder.String(), nil
+}
+
+func sqlGetDatabaseUserPrivileges(dataSourceName string) (string, error) {
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return "", fmt.Errorf("Open connection failed: %w", err)
+	}
+	defer db.Close()
+
+	// see https://www.postgresql.org/docs/13/view-pg-database.html
+	// see https://www.postgresql.org/docs/13/view-pg-user.html
+	var sqlStatement = `
+select
+	d.datname as database,
+	u.usename as user,
+	has_database_privilege(u.usesysid, d.oid, 'CREATE') as db_create_privilege,
+	has_database_privilege(u.usesysid, d.oid, 'CONNECT') as db_connect_privilege,
+	has_database_privilege(u.usesysid, d.oid, 'TEMPORARY') as db_temporary_privilege
+from
+	pg_user as u
+	cross join
+	pg_database as d
+where
+	u.valuntil is not null
+	and
+	d.datname not like 'template%'
+order by
+	d.datname,
+	u.usename
+`
+
+	rows, err := db.Query(sqlStatement)
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var tableBuilder strings.Builder
+	table := tablewriter.NewWriter(&tableBuilder)
+	table.SetHeader([]string{"Database", "User", "Privileges"})
+	for rows.Next() {
+		var database string
+		var user string
+		var dbCreatePrivilege bool
+		var dbConnectPrivilege bool
+		var dbTemporaryPrivilege bool
+		err := rows.Scan(&database, &user, &dbCreatePrivilege, &dbConnectPrivilege, &dbTemporaryPrivilege)
+		if err != nil {
+			return "", fmt.Errorf("Scan failed: %w", err)
+		}
+		privileges := make([]string, 0)
+		if dbCreatePrivilege {
+			privileges = append(privileges, "CREATE")
+		}
+		if dbConnectPrivilege {
+			privileges = append(privileges, "CONNECT")
+		}
+		if dbTemporaryPrivilege {
+			privileges = append(privileges, "TEMPORARY")
+		}
+		table.Append([]string{database, user, strings.Join(privileges, ", ")})
+	}
+	table.Render()
+
+	err = rows.Err()
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+
+	return tableBuilder.String(), nil
+}
+
+func getVaultPostgreSQL() []nameValuePair {
+	postgresqlAddr := os.Getenv("POSTGRESQL_ADDR")
+	if postgresqlAddr == "" {
+		return nil
+	}
+	if os.Getenv("VAULT_TOKEN") == "" {
+		return nil
+	}
+	client, err := vault.NewClient(nil)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to create vault client: %v", err)}}
+	}
+	// TODO cache the `creds` object up to the lease duration and renew it when
+	//      needed. maybe there's even an existing library for this.
+	creds, err := client.Logical().Read("database/creds/greetings-reader")
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to get database/creds/greetings-reader: %v", err)}}
+	}
+	// TODO renew lease OR the code that obtains a database connection should do that when needed.
+	username := creds.Data["username"].(string)
+	password := creds.Data["password"].(string)
+
+	dataSourceNameURL, err := url.Parse(postgresqlAddr)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to parse POSTGRESQL_ADDR: %v", err)}}
+	}
+	dataSourceNameURL.User = url.UserPassword(username, password)
+	dataSourceName := dataSourceNameURL.String()
+
+	result := []nameValuePair{}
+
+	version, err := sqlExecuteScalar(dataSourceName, "select version()")
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Version", Value: version})
+	}
+
+	user, err := sqlExecuteScalar(dataSourceName, "select current_user")
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "User", Value: user})
+	}
+
+	greeting, err := sqlExecuteScalar(dataSourceName, "select message from greeting order by random() limit 1")
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Greeting", Value: fmt.Sprintf("Failed to get greeting: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Greeting", Value: greeting})
+	}
+
+	return result
+}
+
+func getPostgreSQL() []nameValuePair {
+	postgresqlAddr := os.Getenv("POSTGRESQL_ADDR")
+	if postgresqlAddr == "" {
+		return nil
+	}
+	username := "postgres"
+	password := "postgres"
+	dataSourceNameURL, err := url.Parse(postgresqlAddr)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to parse POSTGRESQL_ADDR: %v", err)}}
+	}
+	dataSourceNameURL.User = url.UserPassword(username, password)
+	dataSourceName := dataSourceNameURL.String()
+
+	result := []nameValuePair{}
+
+	version, err := sqlExecuteScalar(dataSourceName, "select version()")
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Version", Value: version})
+	}
+
+	user, err := sqlExecuteScalar(dataSourceName, "select current_user")
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "User", Value: user})
+	}
+
+	users, err := sqlGetUsers(dataSourceName)
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Users", Value: fmt.Sprintf("Failed to get users: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Users", Value: users})
+	}
+
+	databaseUserPrivileges, err := sqlGetDatabaseUserPrivileges(dataSourceName)
+	if err != nil {
+		result = append(result, nameValuePair{Name: "ERROR Privileges", Value: fmt.Sprintf("Failed to get databases user privileges: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Privileges", Value: databaseUserPrivileges})
+	}
+
+	return result
+}
+
 func main() {
 	log.SetFlags(0)
 
@@ -284,6 +575,8 @@ func main() {
 			Environment:      environment,
 			Secrets:          secrets,
 			Vault:            getVault(),
+			VaultPostgreSQL:  getVaultPostgreSQL(),
+			PostgreSQL:       getPostgreSQL(),
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -19,6 +19,10 @@ path "secret/data/example" {
 path "secret/data/another-example" {
     capabilities = ["read"]
 }
+
+path "database/creds/greetings-reader" {
+    capabilities = ["read"]
+}
 "@ | vault policy write go-info -
 
 # create cookie file that notes that we already have configured vault.

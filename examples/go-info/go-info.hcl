@@ -33,6 +33,7 @@ job "go-info" {
       }
       env {
         VAULT_ADDR = "http://active.vault.service.consul:8200"
+        POSTGRESQL_ADDR = "postgres://postgresql.service.consul:5432/greetings?sslmode=disable"
       }
       # see https://www.nomadproject.io/docs/job-specification/template
       # see https://github.com/hashicorp/consul-template

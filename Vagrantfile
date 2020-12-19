@@ -109,6 +109,7 @@ Vagrant.configure(2) do |config|
       config.vm.provision "shell", path: "ps.ps1", args: "examples/damon/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "examples/postgresql/run.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision-vault-client.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "provision-vault-server-configuration-postgresql.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision-vault-server-configuration-go-info.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: ["examples/go-info/run.ps1", n] if n <= 2
     end
