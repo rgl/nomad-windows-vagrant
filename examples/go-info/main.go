@@ -246,21 +246,10 @@ func getVault() []nameValuePair {
 	return result
 }
 
-func sqlExecuteScalar(dataSourceName string, sqlStatement string) (string, error) {
-	db, err := sql.Open("postgres", dataSourceName)
-	if err != nil {
-		return "", fmt.Errorf("Open connection failed: %w", err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		return "", fmt.Errorf("Ping failed: %w", err)
-	}
-
+func sqlExecuteScalar(db *sql.DB, sqlStatement string) (string, error) {
 	var scalar string
 
-	err = db.QueryRow(sqlStatement).Scan(&scalar)
+	err := db.QueryRow(sqlStatement).Scan(&scalar)
 	if err != nil {
 		return "", fmt.Errorf("Scan failed: %w", err)
 	}
@@ -268,13 +257,7 @@ func sqlExecuteScalar(dataSourceName string, sqlStatement string) (string, error
 	return scalar, nil
 }
 
-func sqlGetUsers(dataSourceName string) (string, error) {
-	db, err := sql.Open("postgres", dataSourceName)
-	if err != nil {
-		return "", fmt.Errorf("Open connection failed: %w", err)
-	}
-	defer db.Close()
-
+func sqlGetUsers(db *sql.DB) (string, error) {
 	// see https://www.postgresql.org/docs/13/view-pg-user.html
 	var sqlStatement = `
 select
@@ -349,13 +332,7 @@ order by usename desc
 	return tableBuilder.String(), nil
 }
 
-func sqlGetDatabaseUserPrivileges(dataSourceName string) (string, error) {
-	db, err := sql.Open("postgres", dataSourceName)
-	if err != nil {
-		return "", fmt.Errorf("Open connection failed: %w", err)
-	}
-	defer db.Close()
-
+func sqlGetDatabaseUserPrivileges(db *sql.DB) (string, error) {
 	// see https://www.postgresql.org/docs/13/view-pg-database.html
 	// see https://www.postgresql.org/docs/13/view-pg-user.html
 	var sqlStatement = `
@@ -419,23 +396,30 @@ order by
 	return tableBuilder.String(), nil
 }
 
-func getVaultPostgreSQL() []nameValuePair {
+type DatabaseVaultSecret struct {
+	DataSourceName      string
+	LeaseID             string
+	LeaseTime           time.Time
+	LeaseExpirationTime time.Time
+}
+
+func getPostgreSQLVaultSecret() (*DatabaseVaultSecret, error) {
 	postgresqlAddr := os.Getenv("POSTGRESQL_ADDR")
 	if postgresqlAddr == "" {
-		return nil
+		return nil, fmt.Errorf("No POSTGRESQL_ADDR environment variable")
 	}
 	if os.Getenv("VAULT_TOKEN") == "" {
-		return nil
+		return nil, fmt.Errorf("No VAULT_TOKEN environment variable")
 	}
 	client, err := vault.NewClient(nil)
 	if err != nil {
-		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to create vault client: %v", err)}}
+		return nil, fmt.Errorf("Failed to create vault client: %v", err)
 	}
 	// TODO cache the `creds` object up to the lease duration and renew it when
 	//      needed. maybe there's even an existing library for this.
 	creds, err := client.Logical().Read("database/creds/greetings-reader")
 	if err != nil {
-		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to get database/creds/greetings-reader: %v", err)}}
+		return nil, fmt.Errorf("Failed to get database/creds/greetings-reader: %v", err)
 	}
 	// TODO renew lease OR the code that obtains a database connection should do that when needed.
 	username := creds.Data["username"].(string)
@@ -443,34 +427,57 @@ func getVaultPostgreSQL() []nameValuePair {
 
 	dataSourceNameURL, err := url.Parse(postgresqlAddr)
 	if err != nil {
-		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to parse POSTGRESQL_ADDR: %v", err)}}
+		return nil, fmt.Errorf("Failed to parse POSTGRESQL_ADDR: %v", err)
 	}
 	dataSourceNameURL.User = url.UserPassword(username, password)
 	dataSourceName := dataSourceNameURL.String()
 
+	leaseTime := time.Now()
+	leaseExpirationTime := leaseTime.Add(time.Duration(creds.LeaseDuration * int(time.Second)))
+
+	return &DatabaseVaultSecret{
+		DataSourceName:      dataSourceName,
+		LeaseID:             creds.LeaseID,
+		LeaseTime:           leaseTime,
+		LeaseExpirationTime: leaseExpirationTime,
+	}, nil
+}
+
+func getVaultPostgreSQL() []nameValuePair {
+	secret, err := getPostgreSQLVaultSecret()
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to get PostgreSQL DataSourceName: %v", err)}}
+	}
+
+	dataSourceName := secret.DataSourceName
+
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to open PostgreSQL connection: %v", err)}}
+	}
+	defer db.Close()
+
 	result := []nameValuePair{}
 
-	result = append(result, nameValuePair{Name: "Vault Secret LeaseID", Value: creds.LeaseID})
+	result = append(result, nameValuePair{Name: "Vault Secret LeaseID", Value: secret.LeaseID})
 
-	leaseDuration := time.Duration(creds.LeaseDuration * int(time.Second))
-	leaseExpirationTime := time.Now().Add(leaseDuration)
-	result = append(result, nameValuePair{Name: "Vault Secret LeaseDuration", Value: fmt.Sprintf("%s (until %s)", leaseDuration.String(), leaseExpirationTime.Local().Format(time.RFC1123Z))})
+	result = append(result, nameValuePair{Name: "Vault Secret LeaseDuration", Value: fmt.Sprintf("%s (until %s)", secret.LeaseExpirationTime.Sub(time.Now()), secret.LeaseExpirationTime.Local().Format(time.RFC1123Z))})
 
-	version, err := sqlExecuteScalar(dataSourceName, "select version()")
+	version, err := sqlExecuteScalar(db, "select version()")
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Version", Value: version})
 	}
 
-	user, err := sqlExecuteScalar(dataSourceName, "select current_user")
+	user, err := sqlExecuteScalar(db, "select current_user")
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "User", Value: user})
 	}
 
-	greeting, err := sqlExecuteScalar(dataSourceName, "select message from greeting order by random() limit 1")
+	greeting, err := sqlExecuteScalar(db, "select message from greeting order by random() limit 1")
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR Greeting", Value: fmt.Sprintf("Failed to get greeting: %v", err)})
 	} else {
@@ -494,30 +501,36 @@ func getPostgreSQL() []nameValuePair {
 	dataSourceNameURL.User = url.UserPassword(username, password)
 	dataSourceName := dataSourceNameURL.String()
 
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		return []nameValuePair{{Name: "ERROR", Value: fmt.Sprintf("Failed to open PostgreSQL connection: %v", err)}}
+	}
+	defer db.Close()
+
 	result := []nameValuePair{}
 
-	version, err := sqlExecuteScalar(dataSourceName, "select version()")
+	version, err := sqlExecuteScalar(db, "select version()")
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Version", Value: version})
 	}
 
-	user, err := sqlExecuteScalar(dataSourceName, "select current_user")
+	user, err := sqlExecuteScalar(db, "select current_user")
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "User", Value: user})
 	}
 
-	users, err := sqlGetUsers(dataSourceName)
+	users, err := sqlGetUsers(db)
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR Users", Value: fmt.Sprintf("Failed to get users: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Users", Value: users})
 	}
 
-	databaseUserPrivileges, err := sqlGetDatabaseUserPrivileges(dataSourceName)
+	databaseUserPrivileges, err := sqlGetDatabaseUserPrivileges(db)
 	if err != nil {
 		result = append(result, nameValuePair{Name: "ERROR Privileges", Value: fmt.Sprintf("Failed to get databases user privileges: %v", err)})
 	} else {
@@ -618,4 +631,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to ListenAndServe: %v", err)
 	}
+
+	fmt.Printf("Good bye")
 }
