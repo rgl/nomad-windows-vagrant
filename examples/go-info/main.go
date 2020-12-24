@@ -465,21 +465,21 @@ func getVaultPostgreSQL() []nameValuePair {
 
 	version, err := sqlExecuteScalar(db, "select version()")
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
+		result = append(result, nameValuePair{Name: "Version", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Version", Value: version})
 	}
 
 	user, err := sqlExecuteScalar(db, "select current_user")
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
+		result = append(result, nameValuePair{Name: "User", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "User", Value: user})
 	}
 
 	greeting, err := sqlExecuteScalar(db, "select message from greeting order by random() limit 1")
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR Greeting", Value: fmt.Sprintf("Failed to get greeting: %v", err)})
+		result = append(result, nameValuePair{Name: "Greeting", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Greeting", Value: greeting})
 	}
@@ -511,28 +511,28 @@ func getPostgreSQL() []nameValuePair {
 
 	version, err := sqlExecuteScalar(db, "select version()")
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR Version", Value: fmt.Sprintf("Failed to get version: %v", err)})
+		result = append(result, nameValuePair{Name: "Version", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Version", Value: version})
 	}
 
 	user, err := sqlExecuteScalar(db, "select current_user")
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR User", Value: fmt.Sprintf("Failed to get user: %v", err)})
+		result = append(result, nameValuePair{Name: "User", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "User", Value: user})
 	}
 
 	users, err := sqlGetUsers(db)
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR Users", Value: fmt.Sprintf("Failed to get users: %v", err)})
+		result = append(result, nameValuePair{Name: "Users", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Users", Value: users})
 	}
 
 	databaseUserPrivileges, err := sqlGetDatabaseUserPrivileges(db)
 	if err != nil {
-		result = append(result, nameValuePair{Name: "ERROR Privileges", Value: fmt.Sprintf("Failed to get databases user privileges: %v", err)})
+		result = append(result, nameValuePair{Name: "Privileges", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Privileges", Value: databaseUserPrivileges})
 	}
