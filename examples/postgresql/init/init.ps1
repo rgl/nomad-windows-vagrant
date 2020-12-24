@@ -85,7 +85,16 @@ if ($initialize) {
     Write-Host 'Configuring the listen address...'
     Set-Content -Encoding ascii "$env:PGDATA\postgresql.conf" (
         (Get-Content "$env:PGDATA\postgresql.conf") `
-            -replace '^#?(listen_addresses\s+.+?\s+).+','$1''0.0.0.0'''
+            -replace '^#?(listen_addresses\s*=).+','$1 ''0.0.0.0'''
+    )
+    Write-Host 'Configuring detailed logging...'
+    Set-Content -Encoding ascii "$env:PGDATA\postgresql.conf" (
+        (Get-Content "$env:PGDATA\postgresql.conf") `
+            -replace '^#?(log_min_messages\s*=).+','$1 info' `
+            -replace '^#?(log_statement\s*=).+','$1 ''all''' `
+            -replace '^#?(log_connections\s*=).+','$1 on' `
+            -replace '^#?(log_disconnections\s*=).+','$1 on' `
+            -replace '^#?(log_duration\s*=).+','$1 off'
     )
 
     Write-Host 'Allowing external connections made with the md5 authentication method...'
