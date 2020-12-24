@@ -6,7 +6,15 @@ job "postgresql" {
     task "postgresql" {
       driver = "docker"
       template {
-        destination = "local/sql.d/init.sql"
+        destination = "local/sql.d/00-init.sql"
+        data = <<-EOD
+        \connect postgres;
+        -- TODO restrict to create roles only?
+        create role vault superuser login password 'vault';
+        EOD
+      }
+      template {
+        destination = "local/sql.d/50-grettings.sql"
         data = <<-EOD
         create database greetings;
         \connect greetings;

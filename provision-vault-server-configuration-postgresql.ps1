@@ -26,8 +26,8 @@ vault write database/config/greetings `
     'plugin_name=postgresql-database-plugin' `
     'allowed_roles=greetings-admin,greetings-reader' `
     'connection_url=postgresql://{{username}}:{{password}}@postgresql.service.consul:5432/greetings?sslmode=disable' `
-    'username=postgres' `
-    'password=postgres'
+    'username=vault' `
+    'password=vault'
 #vault write -force database/rotate-root/greetings # immediatly rotate the root password (in this case, the vault username password).
 vault read -format=json database/config/greetings | jq .data
 # configure the greetings-admin role.
