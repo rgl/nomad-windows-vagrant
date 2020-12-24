@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lib/pq"
@@ -440,51 +441,23 @@ where state is not null
 	return tableBuilder.String(), nil
 }
 
-type DatabaseVaultSecret struct {
-	DataSourceName      string
-	LeaseID             string
-	LeaseTime           time.Time
-	LeaseExpirationTime time.Time
-}
+var databaseVaultSecretRenewerMutex sync.Mutex
+var databaseVaultSecretRenewer *DatabaseVaultSecretRenewer
 
 func getPostgreSQLVaultSecret() (*DatabaseVaultSecret, error) {
-	postgresqlAddr := os.Getenv("POSTGRESQL_ADDR")
-	if postgresqlAddr == "" {
-		return nil, fmt.Errorf("No POSTGRESQL_ADDR environment variable")
+	databaseVaultSecretRenewerMutex.Lock()
+	defer databaseVaultSecretRenewerMutex.Unlock()
+	if databaseVaultSecretRenewer == nil {
+		r, err := NewDatabaseVaultSecretRenewer(
+			"database/creds/greetings-reader",
+			"POSTGRESQL_ADDR")
+		if err != nil {
+			return nil, err
+		}
+		go r.Renew()
+		databaseVaultSecretRenewer = r
 	}
-	if os.Getenv("VAULT_TOKEN") == "" {
-		return nil, fmt.Errorf("No VAULT_TOKEN environment variable")
-	}
-	client, err := vault.NewClient(nil)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create vault client: %v", err)
-	}
-	// TODO cache the `creds` object up to the lease duration and renew it when
-	//      needed. maybe there's even an existing library for this.
-	creds, err := client.Logical().Read("database/creds/greetings-reader")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get database/creds/greetings-reader: %v", err)
-	}
-	// TODO renew lease OR the code that obtains a database connection should do that when needed.
-	username := creds.Data["username"].(string)
-	password := creds.Data["password"].(string)
-
-	dataSourceNameURL, err := url.Parse(postgresqlAddr)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse POSTGRESQL_ADDR: %v", err)
-	}
-	dataSourceNameURL.User = url.UserPassword(username, password)
-	dataSourceName := dataSourceNameURL.String()
-
-	leaseTime := time.Now()
-	leaseExpirationTime := leaseTime.Add(time.Duration(creds.LeaseDuration * int(time.Second)))
-
-	return &DatabaseVaultSecret{
-		DataSourceName:      dataSourceName,
-		LeaseID:             creds.LeaseID,
-		LeaseTime:           leaseTime,
-		LeaseExpirationTime: leaseExpirationTime,
-	}, nil
+	return databaseVaultSecretRenewer.GetSecret(), nil
 }
 
 func getVaultPostgreSQL() []nameValuePair {
@@ -681,6 +654,12 @@ func main() {
 	err := http.ListenAndServe(*listenAddress, nil)
 	if err != nil {
 		log.Fatalf("Failed to ListenAndServe: %v", err)
+	}
+
+	databaseVaultSecretRenewerMutex.Lock()
+	defer databaseVaultSecretRenewerMutex.Unlock()
+	if databaseVaultSecretRenewer != nil {
+		databaseVaultSecretRenewer.Stop()
 	}
 
 	fmt.Printf("Good bye")

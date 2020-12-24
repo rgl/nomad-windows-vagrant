@@ -48,11 +48,13 @@ create role \"{{name}}\" with login password '{{password}}' valid until '{{expir
 grant \"greetings-reader\" to \"{{name}}\";
 '@
 # NB db_name must match the database/config/:db_name
+# NB we use such a low ttl and max_ttl to test the secret renewal as done by
+#    the go-info application.
 vault write database/roles/greetings-reader `
     'db_name=greetings' `
     "creation_statements=$creationStatements" `
-    'default_ttl=1h' `
-    'max_ttl=24h'
+    'default_ttl=3m' `
+    'max_ttl=10m'
 vault read -format=json database/roles/greetings-reader | jq .data
 echo 'You can create a user to administer the greetings database with: vault read database/creds/greetings-admin'
 echo 'You can create a user to access the greetings database with: vault read database/creds/greetings-reader'
