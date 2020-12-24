@@ -1,6 +1,8 @@
 # see https://www.nomadproject.io/docs/job-specification
 # see https://www.nomadproject.io/docs/job-specification/vault#vault-parameters
 # see https://www.nomadproject.io/docs/job-specification/template
+# see https://www.nomadproject.io/docs/runtime/interpolation
+# see https://www.nomadproject.io/docs/runtime/environment
 # see https://github.com/hashicorp/consul-template
 
 job "go-info" {
@@ -34,6 +36,13 @@ job "go-info" {
       env {
         VAULT_ADDR = "http://active.vault.service.consul:8200"
         POSTGRESQL_ADDR = "postgres://postgresql.service.consul:5432/greetings?sslmode=disable"
+        # set the name of the application that appears in the postgresql tools.
+        # NB the used postgres libary can be configured with the environment
+        #    variables described at:
+        #       https://github.com/lib/pq/blob/v1.9.0/conn.go#L1939-L2015
+        #    these are a sub-set of the ones described at:
+        #       https://www.postgresql.org/docs/13/libpq-envars.html
+        PGAPPNAME = "nomad-${NOMAD_NAMESPACE}-${NOMAD_ALLOC_NAME}-${NOMAD_ALLOC_ID}"
       }
       # see https://www.nomadproject.io/docs/job-specification/template
       # see https://github.com/hashicorp/consul-template
