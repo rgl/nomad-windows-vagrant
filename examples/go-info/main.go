@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/olekukonko/tablewriter"
 
 	vault "github.com/hashicorp/vault/api"
@@ -276,7 +277,24 @@ func sqlGetUsers(dataSourceName string) (string, error) {
 
 	// see https://www.postgresql.org/docs/13/view-pg-user.html
 	var sqlStatement = `
-select usename, usecreatedb, usesuper, userepl, usebypassrls, valuntil
+select
+	usename,
+	usecreatedb,
+	usesuper,
+	userepl,
+	usebypassrls,
+	valuntil,
+	array(
+		select
+			b.rolname
+		from
+			pg_catalog.pg_auth_members m
+				inner join
+			pg_catalog.pg_roles b
+				on m.roleid = b.oid
+		where
+			m.member = usesysid
+	) as memberof
 from pg_catalog.pg_user
 order by usename desc
 `
@@ -289,7 +307,7 @@ order by usename desc
 
 	var tableBuilder strings.Builder
 	table := tablewriter.NewWriter(&tableBuilder)
-	table.SetHeader([]string{"Name", "Attributes", "Valid Until"})
+	table.SetHeader([]string{"Name", "Privileges", "Member Of", "Valid Until"})
 	for rows.Next() {
 		var username string
 		var usecreatedb bool
@@ -297,7 +315,8 @@ order by usename desc
 		var userepl bool
 		var usebypassrls bool
 		var valuntil sql.NullTime
-		err := rows.Scan(&username, &usecreatedb, &usesuper, &userepl, &usebypassrls, &valuntil)
+		var memberof []string
+		err := rows.Scan(&username, &usecreatedb, &usesuper, &userepl, &usebypassrls, &valuntil, pq.Array(&memberof))
 		if err != nil {
 			return "", fmt.Errorf("Scan failed: %w", err)
 		}
@@ -318,7 +337,7 @@ order by usename desc
 		if valuntil.Valid {
 			expirationTime = valuntil.Time.Local().Format(time.RFC1123Z)
 		}
-		table.Append([]string{username, strings.Join(attributes, ", "), expirationTime})
+		table.Append([]string{username, strings.Join(attributes, ", "), strings.Join(memberof, ", "), expirationTime})
 	}
 	table.Render()
 

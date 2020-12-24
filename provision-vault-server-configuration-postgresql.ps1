@@ -30,10 +30,10 @@ vault write database/config/greetings `
     'password=vault'
 #vault write -force database/rotate-root/greetings # immediatly rotate the root password (in this case, the vault username password).
 vault read -format=json database/config/greetings | jq .data
-# configure the greetings-admin role.
+# configure the greetings-admin role to use the homonyms postgresql role.
 $creationStatements = @'
 create role \"{{name}}\" with login password '{{password}}' valid until '{{expiration}}';
-grant all privileges on all tables in schema public to \"{{name}}\";
+grant \"greetings-admin\" to \"{{name}}\";
 '@
 # NB db_name must match the database/config/:db_name
 vault write database/roles/greetings-admin `
@@ -42,10 +42,10 @@ vault write database/roles/greetings-admin `
     'default_ttl=1h' `
     'max_ttl=24h'
 vault read -format=json database/roles/greetings-admin | jq .data
-# configure the greetings-reader role.
+# configure the greetings-reader role to use the homonyms postgresql role.
 $creationStatements = @'
 create role \"{{name}}\" with login password '{{password}}' valid until '{{expiration}}';
-grant select on all tables in schema public to \"{{name}}\";
+grant \"greetings-reader\" to \"{{name}}\";
 '@
 # NB db_name must match the database/config/:db_name
 vault write database/roles/greetings-reader `
