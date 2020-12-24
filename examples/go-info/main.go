@@ -396,6 +396,50 @@ order by
 	return tableBuilder.String(), nil
 }
 
+func sqlGetDatabaseConnections(db *sql.DB) (string, error) {
+	// see https://www.postgresql.org/docs/13/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
+	var sqlStatement = `
+select 
+    pid,
+    datname,
+    usename,
+    application_name,
+    state
+from pg_stat_activity
+where state is not null
+`
+
+	rows, err := db.Query(sqlStatement)
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var tableBuilder strings.Builder
+	table := tablewriter.NewWriter(&tableBuilder)
+	table.SetHeader([]string{"PID", "Database", "User", "Application", "State"})
+	for rows.Next() {
+		var pid string
+		var database sql.NullString
+		var username sql.NullString
+		var application string
+		var state string
+		err := rows.Scan(&pid, &database, &username, &application, &state)
+		if err != nil {
+			return "", fmt.Errorf("Scan failed: %w", err)
+		}
+		table.Append([]string{pid, database.String, username.String, application, state})
+	}
+	table.Render()
+
+	err = rows.Err()
+	if err != nil {
+		return "", fmt.Errorf("Query failed: %w", err)
+	}
+
+	return tableBuilder.String(), nil
+}
+
 type DatabaseVaultSecret struct {
 	DataSourceName      string
 	LeaseID             string
@@ -535,6 +579,13 @@ func getPostgreSQL() []nameValuePair {
 		result = append(result, nameValuePair{Name: "Privileges", Value: fmt.Sprintf("ERROR: %v", err)})
 	} else {
 		result = append(result, nameValuePair{Name: "Privileges", Value: databaseUserPrivileges})
+	}
+
+	databaseConnections, err := sqlGetDatabaseConnections(db)
+	if err != nil {
+		result = append(result, nameValuePair{Name: "Connections", Value: fmt.Sprintf("ERROR: %v", err)})
+	} else {
+		result = append(result, nameValuePair{Name: "Connections", Value: databaseConnections})
 	}
 
 	return result
