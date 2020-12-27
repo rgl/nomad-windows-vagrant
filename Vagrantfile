@@ -43,6 +43,7 @@ Vagrant.configure(2) do |config|
       config.vm.network :private_network, ip: ip_address, libvirt__forward_mode: "none", libvirt__dhcp_enabled: false
       config.vm.provision "hosts", :sync_hosts => true, :add_localhost_hostnames => false
       config.vm.provision "shell", path: "ps.ps1", args: "provision-choco.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "provision-powershellget.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision-containers-feature.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision.ps1", reboot: true
       config.vm.provision "shell", path: "ps.ps1", args: "provision-docker-ce.ps1"
@@ -98,6 +99,7 @@ Vagrant.configure(2) do |config|
       config.vm.network :private_network, ip: ip_address, libvirt__forward_mode: "none", libvirt__dhcp_enabled: false
       config.vm.provision "hosts", :sync_hosts => true, :add_localhost_hostnames => false
       config.vm.provision "shell", path: "ps.ps1", args: "provision-choco.ps1"
+      config.vm.provision "shell", path: "ps.ps1", args: "provision-powershellget.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision-containers-feature.ps1"
       config.vm.provision "shell", path: "ps.ps1", args: "provision.ps1", reboot: true
       config.vm.provision "shell", path: "ps.ps1", args: "provision-docker-ce.ps1"

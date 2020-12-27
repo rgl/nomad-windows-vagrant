@@ -109,8 +109,71 @@ cp -Force GoogleChrome-master_bookmarks.html "$chromeLocation\master_bookmarks.h
 choco install -y SetDefaultBrowser
 SetDefaultBrowser HKLM "Google Chrome"
 
-# replace notepad with notepad2.
-choco install -y notepad2
-
 # install the carbon powershell library.
 choco install -y carbon
+
+# install monospace font.
+# NB should be one from https://www.nerdfonts.com/ to be compatible with oh-my-posh.
+# see https://www.programmingfonts.org/#dejavu
+# see https://www.programmingfonts.org/#meslo
+choco install -y font-nerd-dejavusansmono
+
+# replace notepad with notepad3.
+choco install -y notepad3
+$notepad3IniPath = "$env:APPDATA\Rizonesoft\Notepad3\Notepad3.ini"
+mkdir -Force (Split-Path -Parent $notepad3IniPath) | Out-Null
+Set-Content -Encoding Ascii $notepad3IniPath @'
+[Settings]
+SettingsVersion=4
+[Common Base]
+Default Style=font:DejaVuSansMono NF; fstyle:Book; size:11
+'@
+
+# configure the windows console (command prompt and powershell).
+reg import console-settings.reg
+# re-create the existing powershell shortcuts.
+# NB the powershell console settings are stored inside the shortcut file and
+#    since there is no obvious api to modify it... we have to re-crete the
+#    shortcuts; these new shortcuts will not have any console settings in
+#    them, so, they will inherit the settings from the registry keys that
+#    we've set before.
+# see https://devblogs.microsoft.com/commandline/understanding-windows-console-host-settings/
+Import-Module C:\ProgramData\chocolatey\helpers\chocolateyInstaller.psm1
+@(
+    ,@(
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell (x86).lnk"
+        "$env:SystemRoot\syswow64\WindowsPowerShell\v1.0\powershell.exe")
+    ,@(
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Windows PowerShell\Windows PowerShell.lnk"
+        "$env:SystemRoot\system32\WindowsPowerShell\v1.0\powershell.exe")
+) | ForEach-Object {
+    if (Test-Path $_[0]) {
+        Remove-Item $_[0]
+    }
+    Install-ChocolateyShortcut `
+        -ShortcutFilePath $_[0] `
+        -TargetPath $_[1] `
+        -WorkingDirectory '%USERPROFILE%'
+}
+
+# customize the powershell psreadline behaviour.
+Set-Content -Encoding Ascii $PROFILE @'
+#Set-PSReadLineOption -EditMode Emacs
+Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
+Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
+'@
+
+# install oh-my-posh v3.
+# see https://ohmyposh.dev/docs/installation/
+# see https://ohmyposh.dev/docs/powershell/
+# see https://ohmyposh.dev/docs/themes
+# see also https://starship.rs/
+# NB this requires an updated PowerShellGet as done in provision-powershellget.ps1.
+#Install-Module -Name posh-git
+Install-Module -Name oh-my-posh -AllowPrerelease
+Copy-Item rgl.omp.json ~/.rgl.omp.json
+Add-Content -Encoding Ascii $PROFILE @'
+Import-Module oh-my-posh
+Set-PoshPrompt -Theme ~/.rgl.omp.json
+'@
