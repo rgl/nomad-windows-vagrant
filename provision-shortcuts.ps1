@@ -85,6 +85,11 @@ URL=http://server1:9090
 URL=http://server1:3000
 "@)
 
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\pgAdmin 4.url", @"
+[InternetShortcut]
+URL=http://pgadmin4.service.consul:5050
+"@)
+
 # restart explorer to apply the changed settings.
 (Get-Process explorer).Kill()
 '@)

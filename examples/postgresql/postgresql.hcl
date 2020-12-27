@@ -34,7 +34,8 @@ job "postgresql" {
         grant connect on database greetings to "greetings-reader";
         --
         -- test users.
-        ---
+        -- NB these are also hardcoded in ..\pgadmin4\pgpass.conf.
+        --
         create role "greetings-test-admin" login password 'greetings';
         grant "greetings-admin" to "greetings-test-admin";
         create role "greetings-test-reader" login password 'greetings';

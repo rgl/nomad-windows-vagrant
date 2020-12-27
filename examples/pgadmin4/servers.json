@@ -1,0 +1,31 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "postgres",
+            "Username": "postgres",
+            "Host": "postgresql.service.consul",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Group": "postgresql.service.consul",
+            "SSLMode": "disable"
+        },
+        "2": {
+            "Name": "greetings-test-admin",
+            "Username": "greetings-test-admin",
+            "Host": "postgresql.service.consul",
+            "Port": 5432,
+            "MaintenanceDB": "greetings",
+            "Group": "postgresql.service.consul",
+            "SSLMode": "disable"
+        },
+        "3": {
+            "Name": "greetings-test-reader",
+            "Username": "greetings-test-reader",
+            "Host": "postgresql.service.consul",
+            "Port": 5432,
+            "MaintenanceDB": "greetings",
+            "Group": "postgresql.service.consul",
+            "SSLMode": "disable"
+        }
+    }
+}
