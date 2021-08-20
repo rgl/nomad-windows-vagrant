@@ -478,7 +478,7 @@ func getVaultPostgreSQL() []nameValuePair {
 
 	result = append(result, nameValuePair{Name: "Vault Secret LeaseID", Value: secret.LeaseID})
 
-	result = append(result, nameValuePair{Name: "Vault Secret LeaseDuration", Value: fmt.Sprintf("%s (until %s)", secret.LeaseExpirationTime.Sub(time.Now()), secret.LeaseExpirationTime.Local().Format(time.RFC1123Z))})
+	result = append(result, nameValuePair{Name: "Vault Secret LeaseDuration", Value: fmt.Sprintf("%s (until %s)", time.Until(secret.LeaseExpirationTime), secret.LeaseExpirationTime.Local().Format(time.RFC1123Z))})
 
 	version, err := sqlExecuteScalar(db, "select version()")
 	if err != nil {
