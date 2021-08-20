@@ -8,8 +8,8 @@ $serviceHome = 'C:\vault-client'
 $env:VAULT_ADDR = "http://active.vault.service.consul:8200"
 
 # install vault-client.
-$archiveUrl = 'https://releases.hashicorp.com/vault/1.6.1/vault_1.6.1_windows_amd64.zip'
-$archiveHash = '4a9b0c803098e745f22bdd510205803ceb4c800fb9c89810c784b6a9e9abc4a4'
+$archiveUrl = 'https://releases.hashicorp.com/vault/1.8.1/vault_1.8.1_windows_amd64.zip'
+$archiveHash = '130e887a18de9a213418de45af190b95e157dbdbf08a9e2c33d4d53406a8791e'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading vault-client...'
