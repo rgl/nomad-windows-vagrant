@@ -102,7 +102,7 @@ job "postgresql" {
         EOD
       }
       config {
-        image = "postgresql:13.1"
+        image = "postgresql:13.4"
         ports = ["postgresql"]
       }
       service {

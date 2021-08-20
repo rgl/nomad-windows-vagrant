@@ -15,7 +15,7 @@ $serviceUsername = 'NT AUTHORITY\SYSTEM'
 $servicePassword = 'ignored'
 
 # the default postgres superuser username and password.
-# see https://www.postgresql.org/docs/10/static/libpq-envars.html
+# see https://www.postgresql.org/docs/13/static/libpq-envars.html
 $env:PGUSER = 'postgres'
 
 function psql {
@@ -54,7 +54,7 @@ if (!(Get-Service -ErrorAction SilentlyContinue $serviceName)) {
 $initialize = !(Test-Path "$env:PGDATA\PG_VERSION")
 
 if ($initialize) {
-    # see https://www.postgresql.org/docs/13.1/static/creating-cluster.html
+    # see https://www.postgresql.org/docs/13.4/static/creating-cluster.html
     Write-Host "Creating the Database Cluster in $env:PGDATA..."
     mkdir -Force $env:PGDATA | Out-Null
     $acl = New-Object System.Security.AccessControl.DirectorySecurity

@@ -1,5 +1,5 @@
 # see https://www.elastic.co/guide/en/beats/winlogbeat/current/configuration-winlogbeat-options.html
-# see https://www.postgresql.org/docs/13.1/static/event-log-registration.html
+# see https://www.postgresql.org/docs/13.4/static/event-log-registration.html
 # see the available log names with:
 #       Get-WinEvent -ListLog * | Sort-Object LogName | Format-Table LogName
 # see the providers that write to a specific log with:

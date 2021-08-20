@@ -8,9 +8,9 @@ if (Test-Path "$env:TEMP\postgresql") {
 mkdir -Force "$env:TEMP\postgresql" | Out-Null
 Copy-Item -Recurse * "$env:TEMP\postgresql"
 Push-Location "$env:TEMP\postgresql"
-docker build -t postgresql:13.1 .
-docker image ls postgresql:13.1
-docker history postgresql:13.1
+docker build -t postgresql:13.4 .
+docker image ls postgresql:13.4
+docker history postgresql:13.4
 Pop-Location
 
 # launch the job.
