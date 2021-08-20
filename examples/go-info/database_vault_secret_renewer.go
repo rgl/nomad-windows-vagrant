@@ -31,18 +31,18 @@ type DatabaseVaultSecretRenewer struct {
 func NewDatabaseVaultSecretRenewer(credentialsPath string, databaseSourceNameEnv string) (*DatabaseVaultSecretRenewer, error) {
 	dataSourceName := os.Getenv(databaseSourceNameEnv)
 	if dataSourceName == "" {
-		return nil, fmt.Errorf("No %s environment variable", databaseSourceNameEnv)
+		return nil, fmt.Errorf("no %s environment variable", databaseSourceNameEnv)
 	}
 	dataSource, err := url.Parse(dataSourceName)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse %s: %v", databaseSourceNameEnv, err)
+		return nil, fmt.Errorf("failed to parse %s: %v", databaseSourceNameEnv, err)
 	}
 	if os.Getenv("VAULT_TOKEN") == "" {
-		return nil, fmt.Errorf("No VAULT_TOKEN environment variable")
+		return nil, fmt.Errorf("no VAULT_TOKEN environment variable")
 	}
 	client, err := vault.NewClient(nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create vault client: %v", err)
+		return nil, fmt.Errorf("failed to create vault client: %v", err)
 	}
 	return &DatabaseVaultSecretRenewer{
 		client:          client,

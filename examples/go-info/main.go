@@ -252,7 +252,7 @@ func sqlExecuteScalar(db *sql.DB, sqlStatement string) (string, error) {
 
 	err := db.QueryRow(sqlStatement).Scan(&scalar)
 	if err != nil {
-		return "", fmt.Errorf("Scan failed: %w", err)
+		return "", fmt.Errorf("scan failed: %w", err)
 	}
 
 	return scalar, nil
@@ -285,7 +285,7 @@ order by usename desc
 
 	rows, err := db.Query(sqlStatement)
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -302,7 +302,7 @@ order by usename desc
 		var memberof []string
 		err := rows.Scan(&username, &usecreatedb, &usesuper, &userepl, &usebypassrls, &valuntil, pq.Array(&memberof))
 		if err != nil {
-			return "", fmt.Errorf("Scan failed: %w", err)
+			return "", fmt.Errorf("scan failed: %w", err)
 		}
 		attributes := make([]string, 0)
 		if usecreatedb {
@@ -327,7 +327,7 @@ order by usename desc
 
 	err = rows.Err()
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 
 	return tableBuilder.String(), nil
@@ -358,7 +358,7 @@ order by
 
 	rows, err := db.Query(sqlStatement)
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -373,7 +373,7 @@ order by
 		var dbTemporaryPrivilege bool
 		err := rows.Scan(&database, &user, &dbCreatePrivilege, &dbConnectPrivilege, &dbTemporaryPrivilege)
 		if err != nil {
-			return "", fmt.Errorf("Scan failed: %w", err)
+			return "", fmt.Errorf("scan failed: %w", err)
 		}
 		privileges := make([]string, 0)
 		if dbCreatePrivilege {
@@ -391,7 +391,7 @@ order by
 
 	err = rows.Err()
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 
 	return tableBuilder.String(), nil
@@ -412,7 +412,7 @@ where state is not null
 
 	rows, err := db.Query(sqlStatement)
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -427,7 +427,7 @@ where state is not null
 		var state string
 		err := rows.Scan(&pid, &database, &username, &application, &state)
 		if err != nil {
-			return "", fmt.Errorf("Scan failed: %w", err)
+			return "", fmt.Errorf("scan failed: %w", err)
 		}
 		table.Append([]string{pid, database.String, username.String, application, state})
 	}
@@ -435,7 +435,7 @@ where state is not null
 
 	err = rows.Err()
 	if err != nil {
-		return "", fmt.Errorf("Query failed: %w", err)
+		return "", fmt.Errorf("query failed: %w", err)
 	}
 
 	return tableBuilder.String(), nil
