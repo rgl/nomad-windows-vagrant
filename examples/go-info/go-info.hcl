@@ -38,7 +38,7 @@ job "go-info" {
         # set the name of the application that appears in the postgresql tools.
         # NB the used postgres libary can be configured with the environment
         #    variables described at:
-        #       https://github.com/lib/pq/blob/v1.9.0/conn.go#L1939-L2015
+        #       https://github.com/lib/pq/blob/v1.10.2/conn.go#L1944-L2020
         #    these are a sub-set of the ones described at:
         #       https://www.postgresql.org/docs/13/libpq-envars.html
         PGAPPNAME = "nomad-${NOMAD_NAMESPACE}-${NOMAD_ALLOC_NAME}-${NOMAD_ALLOC_ID}"

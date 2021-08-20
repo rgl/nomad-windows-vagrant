@@ -55,12 +55,12 @@ func NewDatabaseVaultSecretRenewer(credentialsPath string, databaseSourceNameEnv
 }
 
 func (r *DatabaseVaultSecretRenewer) Renew() {
-	var renewer *vault.Renewer
+	var watcher *vault.LifetimeWatcher
 
 	for {
-		if renewer != nil {
-			renewer.Stop()
-			renewer = nil
+		if watcher != nil {
+			watcher.Stop()
+			watcher = nil
 		}
 
 		select {
@@ -81,13 +81,13 @@ func (r *DatabaseVaultSecretRenewer) Renew() {
 		leaseExpirationTime := leaseTime.Add(time.Duration(secret.LeaseDuration * int(time.Second)))
 		log.Printf("Database %s secret created. LeaseID %s (valid until %s)", r.credentialsPath, secret.LeaseID, leaseExpirationTime)
 
-		renewer, err = r.client.NewRenewer(&vault.RenewerInput{Secret: secret})
+		watcher, err = r.client.NewLifetimeWatcher(&vault.LifetimeWatcherInput{Secret: secret})
 		if err != nil {
 			log.Printf("Failed to create renewer to the %s secret: %v", r.credentialsPath, err)
 			time.Sleep(5 * time.Second) // TODO exponential backoff?
 			continue
 		}
-		go renewer.Renew()
+		go watcher.Start()
 
 		username := secret.Data["username"].(string)
 		password := secret.Data["password"].(string)
@@ -100,7 +100,7 @@ func (r *DatabaseVaultSecretRenewer) Renew() {
 		for {
 			select {
 			case <-r.stopCh:
-				return
+				break renewSecret
 			case ch := <-r.secretCh:
 				ch <- &DatabaseVaultSecret{
 					DataSourceName:      dataSourceName,
@@ -108,7 +108,7 @@ func (r *DatabaseVaultSecretRenewer) Renew() {
 					LeaseTime:           leaseTime,
 					LeaseExpirationTime: leaseExpirationTime,
 				}
-			case err := <-renewer.DoneCh():
+			case err := <-watcher.DoneCh():
 				if err != nil {
 					log.Printf("Database %s secret renew failed: %v", r.credentialsPath, err)
 					break renewSecret
@@ -116,13 +116,9 @@ func (r *DatabaseVaultSecretRenewer) Renew() {
 				// NB postgreSQLVaultSecret could still be used a little
 				//    bit more (until the expiration date); but its
 				//    safer/easier to create a new secret.
-				//    TODO it seems the new vault client (after 1.0.4) has
-				//    improvements over the current one, so, revise this
-				//    when that comes out.
-				// see https://github.com/hashicorp/vault/issues/10490
 				log.Printf("Database %s secret MaxTTL reached.", r.credentialsPath)
 				break renewSecret
-			case renewal := <-renewer.RenewCh():
+			case renewal := <-watcher.RenewCh():
 				leaseTime = renewal.RenewedAt
 				leaseExpirationTime = leaseTime.Add(time.Duration(renewal.Secret.LeaseDuration * int(time.Second)))
 				log.Printf("Database %s secret renewed. LeaseID %s (valid until %s)", r.credentialsPath, renewal.Secret.LeaseID, leaseExpirationTime)

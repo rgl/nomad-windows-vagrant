@@ -1,5 +1,5 @@
 # escape=`
-FROM golang:1.15.6 AS builder
+FROM golang:1.17.0 AS builder
 WORKDIR /Users/ContainerUser/go-info
 COPY go.* ./
 RUN go mod download
