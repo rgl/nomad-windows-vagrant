@@ -3,6 +3,14 @@
 job "postgresql" {
   datacenters = ["dc1"]
   group "postgresql" {
+    network {
+      port "postgresql" {
+        # NB this is non-ideal. but vault/libpq does not support srv
+        #    records, so have to use a host/static port here.
+        static = 5432
+        to = 5432
+      }
+    }
     task "postgresql" {
       driver = "docker"
       template {
@@ -95,18 +103,7 @@ job "postgresql" {
       }
       config {
         image = "postgresql:13.1"
-        port_map {
-          postgresql = 5432
-        }
-      }
-      resources {
-        network {
-          port "postgresql" {
-            # NB this is non-ideal. but vault/libpq does not support srv
-            #    records, so have to use a host/static port here.
-            static = 5432
-          }
-        }
+        ports = ["postgresql"]
       }
       service {
         name = "postgresql"

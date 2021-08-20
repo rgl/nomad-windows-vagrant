@@ -12,18 +12,17 @@ job "go-info" {
     constraint {
       distinct_hosts = true
     }
+    network {
+      port "http" {
+        static = 8000
+        to = 8000
+      }
+    }
     task "go-info" {
       driver = "docker"
       config {
         image = "go-info:1.0.0"
-        port_map {
-          http = 8000
-        }
-      }
-      resources {
-        network {
-          port "http" {}
-        }
+        ports = ["http"]
       }
       # see https://www.nomadproject.io/docs/job-specification/vault#vault-parameters
       vault {

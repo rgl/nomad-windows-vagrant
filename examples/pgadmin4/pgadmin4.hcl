@@ -3,20 +3,17 @@
 job "pgadmin4" {
   datacenters = ["dc1"]
   group "pgadmin4" {
+    network {
+      port "http" {
+        static = 5050
+        to = 5050
+      }
+    }
     task "pgadmin4" {
       driver = "docker"
       config {
         image = "pgadmin4:4.29"
-        port_map {
-          http = 5050
-        }
-      }
-      resources {
-        network {
-          port "http" {
-            static = 5050
-          }
-        }
+        ports = ["http"]
       }
       service {
         name = "pgadmin4"
