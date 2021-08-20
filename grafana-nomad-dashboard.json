@@ -14,12 +14,12 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "7.3.4"
+      "version": "8.1.1"
     },
     {
       "type": "panel",
       "id": "graph",
-      "name": "Graph",
+      "name": "Graph (old)",
       "version": ""
     },
     {
@@ -38,6 +38,12 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -50,6 +56,10 @@
   "panels": [
     {
       "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -67,12 +77,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Running",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -102,7 +106,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -169,12 +173,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Pending",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -204,7 +202,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -271,12 +269,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Dead",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -306,7 +298,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -369,6 +361,10 @@
     {
       "collapsed": false,
       "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -387,12 +383,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Running",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -422,7 +412,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -489,12 +479,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that have Failed",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -524,7 +508,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -590,12 +574,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that have Completed",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -625,7 +603,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -692,12 +670,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Starting",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -727,7 +699,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -794,12 +766,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that have Queued",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -829,7 +795,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -896,12 +862,6 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of Nomad Jobs that are Lost",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -931,7 +891,7 @@
         "alertThreshold": false
       },
       "percentage": false,
-      "pluginVersion": "7.3.4",
+      "pluginVersion": "8.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -990,126 +950,10 @@
         "align": false,
         "alignLevel": null
       }
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 11,
-      "panels": [],
-      "title": "Allocations",
-      "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of Nomad Allocations",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 6,
-        "x": 0,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 17,
-      "legend": {
-        "alignAsTable": false,
-        "avg": true,
-        "current": false,
-        "hideZero": true,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": false
-      },
-      "percentage": false,
-      "pluginVersion": "7.3.4",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(nomad_nomad_client_allocations_stats_count[$__rate_interval])",
-          "format": "time_series",
-          "instant": false,
-          "interval": "",
-          "legendFormat": "{{instance}}",
-          "queryType": "randomWalk",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Allocations/s",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 26,
+  "schemaVersion": 30,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1134,5 +978,5 @@
   "timezone": "",
   "title": "Nomad",
   "uid": "9Ex1YyAGk",
-  "version": 1
+  "version": 2
 }
