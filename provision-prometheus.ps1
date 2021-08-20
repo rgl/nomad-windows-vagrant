@@ -13,8 +13,8 @@ $prometheusServiceName = 'prometheus'
 $prometheusServiceUsername = "NT SERVICE\$prometheusServiceName"
 
 # download and install prometheus.
-$archiveUrl = 'https://github.com/prometheus/prometheus/releases/download/v2.23.0/prometheus-2.23.0.windows-amd64.zip'
-$archiveHash = 'd032e4597c137d8f39effc459a94d533a0c3135ff8ed7eae5b0a7c540b61985c'
+$archiveUrl = 'https://github.com/prometheus/prometheus/releases/download/v2.29.1/prometheus-2.29.1.windows-amd64.zip'
+$archiveHash = 'd81c4c1a3b424e71c42169e8e187c83ae1c4bb8aa32da5308513887c6251bcaf'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading Prometheus...'
