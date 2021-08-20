@@ -33,8 +33,8 @@ if ($result -ne '[SC] ChangeServiceConfig2 SUCCESS') {
 
 # download and install grafana.
 # see https://grafana.com/grafana/download?platform=windows
-$archiveUrl = 'https://dl.grafana.com/oss/release/grafana-7.3.6.windows-amd64.zip'
-$archiveHash = '7952877fadfa2df173c64e10e8b3d5eff8fa6035c76840e288614cb2960f433c'
+$archiveUrl = 'https://dl.grafana.com/oss/release/grafana-8.1.1.windows-amd64.zip'
+$archiveHash = '1f86845cfd640f46fec0d389d5f6de11f2025f41b1f2005efdd9f60f8a1cf689'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading Grafana...'
@@ -127,7 +127,7 @@ Get-ChildItem grafana-*-dashboard.json | ForEach-Object {
     $dashboard.PSObject.Properties.Remove('__requires')
     New-GrafanaDashboard @{
         dashboard = $dashboard
-    }    
+    }
 }
 
 # configure the firewall.
