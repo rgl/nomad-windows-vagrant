@@ -12,7 +12,7 @@ job "pgadmin4" {
     task "pgadmin4" {
       driver = "docker"
       config {
-        image = "pgadmin4:4.29"
+        image = "pgadmin4:5.6"
         ports = ["http"]
       }
       service {

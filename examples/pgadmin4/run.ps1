@@ -8,9 +8,9 @@ if (Test-Path "$env:TEMP\pgadmin4") {
 mkdir -Force "$env:TEMP\pgadmin4" | Out-Null
 Copy-Item -Recurse * "$env:TEMP\pgadmin4"
 Push-Location "$env:TEMP\pgadmin4"
-docker build -t pgadmin4:4.29 .
-docker image ls pgadmin4:4.29
-docker history pgadmin4:4.29
+docker build -t pgadmin4:5.6 .
+docker image ls pgadmin4:5.6
+docker history pgadmin4:5.6
 Pop-Location
 
 # launch the job.
