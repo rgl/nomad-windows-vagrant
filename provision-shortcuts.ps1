@@ -90,6 +90,11 @@ URL=http://server1:3000
 URL=http://pgadmin4.service.consul:5050
 "@)
 
+[IO.File]::WriteAllText("$env:USERPROFILE\Desktop\go-info.url", @"
+[InternetShortcut]
+URL=http://go-info.service.consul:8000
+"@)
+
 # restart explorer to apply the changed settings.
 (Get-Process explorer).Kill()
 '@)
