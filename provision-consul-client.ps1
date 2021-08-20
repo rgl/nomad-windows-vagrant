@@ -11,8 +11,8 @@ $serviceName = 'consul-client'
 $serviceUsername = "NT SERVICE\$serviceName"
 
 # install consul-client.
-$archiveUrl = 'https://releases.hashicorp.com/consul/1.9.0/consul_1.9.0_windows_amd64.zip'
-$archiveHash = '1cd7736b799a8c2ab1efd57020037a40f51061bac3bee07a518c8a4c87eb965d'
+$archiveUrl = 'https://releases.hashicorp.com/consul/1.10.1/consul_1.10.1_windows_amd64.zip'
+$archiveHash = 'ebf22aa1bde44dfebf432185ec29e4c8efb6d54ac79b3e9ee6cc5c0ae21ad49a'
 $archiveName = Split-Path $archiveUrl -Leaf
 $archivePath = "$env:TEMP\$archiveName"
 Write-Host 'Downloading consul-client...'
